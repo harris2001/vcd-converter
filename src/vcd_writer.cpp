@@ -106,7 +106,7 @@ public:
     VariableType _type;  // VCD variable type, one of `VariableTypes`
     std::string  _name;  // human-readable name
     unsigned     _size;  // size of variable, in bits
-    ScopePtr    _scope;  // pointer to scope string
+    std::weak_ptr<VCDScope>    _scope;  // pointer to scope string
 
     //! string representation of variable types
     static const std::array<std::string, 20> VAR_TYPES;
@@ -134,13 +134,16 @@ const std::array<std::string, 20> VCDVariable::VAR_TYPES = {
 size_t VarPtrHash::operator()(const VarPtr &p) const
 {
     std::hash<std::string> h;
-    return (h(p->_name) ^ (h(p->_scope->name) << 1));
+    std::shared_ptr<VCDScope> scope = p->_scope.lock();
+    return (h(p->_name) ^ (h(scope->name) << 1));
 }
 
 // -----------------------------
 bool VarPtrEqual::operator()(const VarPtr &a, const VarPtr &b) const
 {
-    return (a->_name == b->_name) && (a->_scope->name == b->_scope->name);
+    std::shared_ptr<VCDScope> scope_a = a->_scope.lock();
+    std::shared_ptr<VCDScope> scope_b = b->_scope.lock();
+    return (a->_name == b->_name) && (scope_a->name == scope_b->name);
 }
 
 // -----------------------------
